@@ -12,9 +12,11 @@ djangorestframework = "^3.14.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.10.1"
+django-stubs = "^4.2.6"
 isort = "^5.12.0"
 mypy = "^1.6.1"
 pylint = "^3.0.2"
+pylint-django = "^2.5.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -22,6 +24,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.format]
 max-line-length = 120
+
+[tool.pylint.MASTER]
+load-plugins = ["pylint_django"]
+django-settings-module = "app.settings"
 
 [tool.pylint.basic]
 good-names = ["db"]
@@ -43,6 +49,10 @@ disallow_incomplete_defs = true
 disallow_untyped_defs = true
 ignore_missing_imports = false
 no_implicit_optional = true
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "app.settings"
 
 [tool.black]
 line-length = 120
