@@ -116,3 +116,5 @@ pytest-cov-report.xml
 
 # Jupyter notebook checkpoints
 .ipynb_checkpoints
+
+db.sqlite3
