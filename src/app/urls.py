@@ -20,6 +20,8 @@ from django.views.generic import TemplateView
 from rest_framework.schemas import get_schema_view
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from users.views import CurrentUserView, UserListView
+
 
 urlpatterns = [
     path(
@@ -38,7 +40,9 @@ urlpatterns = [
         ),
         name="swagger",
     ),
-    path("admin/", admin.site.urls),
+    path("admin/", admin.site.urls, name="admin"),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("me/", CurrentUserView.as_view(), name="me"),
+    path("api/users/", UserListView.as_view(), name="users"),
 ]
