@@ -9,14 +9,7 @@ if TYPE_CHECKING:
 
 
 class UserManager(BaseUserManager):
-    """
-    Менеджер модели пользователей.
-    """
-
     def create_user(self, email: str, password: str, **extra_fields) -> "User":
-        """
-        Создает и сохраняет пользователя по переданным email и паролю.
-        """
         if not email:
             raise ValueError(_("The given email must be set"))
         email = self.normalize_email(email)
@@ -26,9 +19,6 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email: str, password: str, **extra_fields) -> "User":
-        """
-        Создает и сохраняет суперпользователя по переданным email и паролю.
-        """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         if extra_fields.get("is_staff") is not True:
