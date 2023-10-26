@@ -89,6 +89,18 @@ DATABASES = {
 }
 
 
+# Sending email
+# https://docs.djangoproject.com/en/4.2/topics/email/
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "mail.test.com"
+EMAIL_PORT = 25
+EMAIL_HOST_USER = "help@test.com"
+EMAIL_HOST_PASSWORD = "hackme"
+EMAIL_USE_TLS = False
+SERVER_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
