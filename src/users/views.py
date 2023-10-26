@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from .models import User
 from .serializers import UserSerializer
+from .tasks import send_mail_for_new_users_task
 
 
 class UserListView(generics.ListCreateAPIView, generics.UpdateAPIView):
@@ -18,7 +19,11 @@ class UserListView(generics.ListCreateAPIView, generics.UpdateAPIView):
         serializer = self.get_serializer(data=request.data, many=many)
         serializer.is_valid(raise_exception=True)
 
-        self.perform_create(serializer)
+        instances = self.perform_create(serializer)
+        if not isinstance(instances, list):
+            instances = [instances]
+        emails = [instance.email for instance in instances]
+        send_mail_for_new_users_task.delay(emails)
 
         if many:
             result_data = list(serializer.data)
@@ -26,6 +31,9 @@ class UserListView(generics.ListCreateAPIView, generics.UpdateAPIView):
             result_data = serializer.data
 
         return Response(result_data, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, serializer) -> User | list[User]:
+        return serializer.save()
 
     def update(self, request: Request, *args, **kwargs) -> Response:
         many = isinstance(request.data, list)
