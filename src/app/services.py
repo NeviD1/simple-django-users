@@ -21,7 +21,7 @@ def send_mail(
     logger.debug("Отправка сообщения на %s: %s. attach_file_paths=%s", email_to, subject, attach_file_paths)
     try:
         result = email.send()
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         result = 0
         logger.error(e)
 
