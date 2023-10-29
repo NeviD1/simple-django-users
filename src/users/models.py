@@ -6,13 +6,13 @@ from .managers import UserManager
 
 
 class User(AbstractUser):
-    username = None
+    username = None  # type: ignore
     email = models.EmailField(_("email address"), unique=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
-    objects: UserManager = UserManager()
+    objects: UserManager = UserManager()  # type: ignore
 
     def __str__(self):
         return self.email

@@ -32,7 +32,7 @@ class UserListView(generics.ListCreateAPIView, generics.UpdateAPIView):
 
         return Response(result_data, status=status.HTTP_201_CREATED)
 
-    def perform_create(self, serializer) -> User | list[User]:
+    def perform_create(self, serializer) -> User | list[User]:  # type: ignore
         return serializer.save()
 
     def update(self, request: Request, *args, **kwargs) -> Response:
