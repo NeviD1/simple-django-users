@@ -147,10 +147,12 @@ USE_TZ = False
 
 STATIC_URL = "static/"
 
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 
 # Django Rest Framework
 # https://www.django-rest-framework.org/api-guide/settings/
@@ -165,9 +167,84 @@ REST_FRAMEWORK = {
     ),
 }
 
+
 # Simple JWT
 # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME ": timedelta(days=1),
+}
+
+
+# Logging
+# https://docs.djangoproject.com/en/4.2/topics/logging/
+# https://docs.djangoproject.com/en/4.2/howto/logging/
+# https://docs.djangoproject.com/en/4.2/ref/logging/
+
+LOGS_DIR = BASE_DIR.parent / "logs"
+_LOGGER_PARAMS = {
+    "level": "DEBUG",
+    "handlers": ["file_debug", "file_info", "file_error", "console"],
+}
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file_debug": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "debug.log",
+            "formatter": "verbose",
+        },
+        "file_info": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "info.log",
+            "formatter": "verbose",
+        },
+        "file_error": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "error.log",
+            "formatter": "verbose",
+        },
+        "file_django_error": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "django_error.log",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file_django_error"],
+        },
+        "app": _LOGGER_PARAMS,
+        "users": _LOGGER_PARAMS,
+    },
 }
