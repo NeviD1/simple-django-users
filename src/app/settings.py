@@ -13,6 +13,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -97,6 +99,17 @@ DATABASES = {
 
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = "Europe/Moscow"
+
+CELERY_BEAT_SCHEDULE = {
+    "send_admin_daily_mail_task": {
+        "task": "users.tasks.send_admin_daily_mail_task",
+        "schedule": crontab(hour="0", minute="0"),
+    },
+}
 
 
 # Sending email
@@ -182,6 +195,8 @@ SIMPLE_JWT = {
 # https://docs.djangoproject.com/en/4.2/ref/logging/
 
 LOGS_DIR = BASE_DIR.parent / "logs"
+if not LOGS_DIR.exists():
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
 _LOGGER_PARAMS = {
     "level": "DEBUG",
     "handlers": ["file_debug", "file_info", "file_error", "console"],

@@ -42,7 +42,7 @@ services:
 
   celery_beat:
     build: .
-    command: celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    command: celery -A app beat -l INFO
     env_file: .env.dev
     volumes:
       - .:/app
