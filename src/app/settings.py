@@ -9,8 +9,11 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
+from datetime import timedelta
 from pathlib import Path
+
+from celery.schedules import crontab
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-dy$u7%xh!gdo(c@#ajf2c0k9#f*5glv52vyh$309^kp$tlb7(j"
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(int(os.environ.get("DJANGO_DEBUG", 0)))
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(" ")
 
 
 # Application definition
@@ -38,8 +41,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_beat",
     "rest_framework",
     "rest_framework_simplejwt",
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -74,16 +79,49 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "app.wsgi.application"
 
+AUTH_USER_MODEL = "users.User"
+
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ["POSTGRES_DB"],
+        "USER": os.environ["POSTGRES_USER"],
+        "PASSWORD": os.environ["POSTGRES_PASSWORD"],
+        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
     }
 }
+
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = "Europe/Moscow"
+
+CELERY_BEAT_SCHEDULE = {
+    "send_admin_daily_mail_task": {
+        "task": "users.tasks.send_admin_daily_mail_task",
+        "schedule": crontab(hour="0", minute="0"),
+    },
+}
+
+
+# Sending email
+# https://docs.djangoproject.com/en/4.2/topics/email/
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "mail.test.com"
+EMAIL_PORT = 25
+EMAIL_HOST_USER = "help@test.com"
+EMAIL_HOST_PASSWORD = "hackme"
+EMAIL_USE_TLS = False
+SERVER_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # Password validation
@@ -108,13 +146,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru-ru"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Moscow"
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -122,10 +160,12 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 
 # Django Rest Framework
 # https://www.django-rest-framework.org/api-guide/settings/
@@ -138,4 +178,88 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ),
+}
+
+
+# Simple JWT
+# https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME ": timedelta(days=1),
+}
+
+
+# Logging
+# https://docs.djangoproject.com/en/4.2/topics/logging/
+# https://docs.djangoproject.com/en/4.2/howto/logging/
+# https://docs.djangoproject.com/en/4.2/ref/logging/
+
+LOGS_DIR = BASE_DIR.parent / "logs"
+if not LOGS_DIR.exists():
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+_LOGGER_PARAMS = {
+    "level": "DEBUG",
+    "handlers": ["file_debug", "file_info", "file_error", "console"],
+}
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file_debug": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "debug.log",
+            "formatter": "verbose",
+        },
+        "file_info": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "info.log",
+            "formatter": "verbose",
+        },
+        "file_error": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "error.log",
+            "formatter": "verbose",
+        },
+        "file_django_error": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "django_error.log",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file_django_error"],
+        },
+        "app": _LOGGER_PARAMS,
+        "users": _LOGGER_PARAMS,
+    },
 }
